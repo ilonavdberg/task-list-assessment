@@ -116,7 +116,7 @@ public final class TaskList implements Runnable {
                 out.println("       " + task.getId() + ": " + task.getDescription());
             }
         }
-
+        out.println();
     }
 
     private void add(String commandLine) {

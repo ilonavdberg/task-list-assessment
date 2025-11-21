@@ -91,6 +91,26 @@ public final class ApplicationTest {
                 ""
         );
 
+        execute("deadline 2 25-11-2025");
+        execute("deadline 4 21-11-2025");
+        execute("deadline 7 21-11-2025");
+
+        execute("show-by-deadline");
+        readLines(
+                "21-11-2025:",
+                "       4: SOLID",
+                "       7: Outside-In TDD",
+                "25-11-2025:",
+                "       2: Destroy all humans.",
+                "No deadline:",
+                "       1: Eat more donuts.",
+                "       3: Four Elements of Simple Design",
+                "       5: Coupling and Cohesion",
+                "       6: Primitive Obsession",
+                "       8: Interaction-Driven Design",
+                ""
+        );
+
         execute("quit");
     }
 
