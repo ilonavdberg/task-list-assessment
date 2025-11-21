@@ -22,8 +22,9 @@ public class TaskRepository {
 
     private TaskRepository() {}
 
-    public void save(Task task) {
+    public Task save(Task task) {
         tasks.add(task);
+        return tasks.get(tasks.size() - 1);
     }
 
     public List<Task> findAll() {

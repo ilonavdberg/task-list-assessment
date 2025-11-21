@@ -56,15 +56,15 @@ public class TaskListService {
         projectRepository.save(project);
     }
 
-    public void addTaskToProject(String projectName, String taskDescription) {
+    public Task addTaskToProject(String projectName, String taskDescription) {
         Project project = projectRepository.findByName(projectName)
                 .orElseThrow(() -> new RecordNotFoundException("Could not find a project with the name \"" + projectName + "\"."));
 
         Task task = new Task(project, taskDescription);
-        taskRepository.save(task);
+        return taskRepository.save(task);
     }
 
-    public void changeDoneOnTask(int taskId, boolean done) {
+    public void changeStatusOnTask(int taskId, boolean done) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RecordNotFoundException("Could not find a task with an ID of " + taskId + "."));
 

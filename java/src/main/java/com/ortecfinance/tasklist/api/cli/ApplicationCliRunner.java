@@ -167,7 +167,7 @@ public final class ApplicationCliRunner implements Runnable {
     private void setDone(String idString, boolean done) {
         int id = Integer.parseInt(idString);
         try {
-            taskListService.changeDoneOnTask(id, done);
+            taskListService.changeStatusOnTask(id, done);
         } catch(RecordNotFoundException exception) {
             out.printf(exception.getMessage());
             out.println();
