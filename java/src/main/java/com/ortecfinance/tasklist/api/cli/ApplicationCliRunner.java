@@ -1,4 +1,11 @@
-package com.ortecfinance.tasklist;
+package com.ortecfinance.tasklist.api.cli;
+
+import com.ortecfinance.tasklist.application.TaskListService;
+import com.ortecfinance.tasklist.domain.project.Project;
+import com.ortecfinance.tasklist.domain.project.ProjectRepository;
+import com.ortecfinance.tasklist.domain.task.Task;
+import com.ortecfinance.tasklist.domain.task.TaskRepository;
+import com.ortecfinance.tasklist.exceptions.RecordNotFoundException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -8,10 +15,12 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-public final class TaskList implements Runnable {
+public final class ApplicationCliRunner implements Runnable {
+    public static final String PROMPT = "> ";
     private static final String QUIT = "quit";
 
-    private final Map<String, List<Task>> tasks = new LinkedHashMap<>();
+    private final Map<String, List<Task>> tasks = new LinkedHashMap<>(); //TODO: replace with repository
+    private final TaskListService taskListService;
     private final BufferedReader in;
     private final PrintWriter out;
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
@@ -21,10 +30,11 @@ public final class TaskList implements Runnable {
     public static void startConsole() {
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         PrintWriter out = new PrintWriter(System.out);
-        new TaskList(in, out).run();
+        new ApplicationCliRunner(new TaskListService(TaskRepository.getInstance(), ProjectRepository.getInstance()), in, out).run();
     }
 
-    public TaskList(BufferedReader reader, PrintWriter writer) {
+    public ApplicationCliRunner(TaskListService taskListService, BufferedReader reader, PrintWriter writer) {
+        this.taskListService = taskListService;
         this.in = reader;
         this.out = writer;
     }
@@ -32,7 +42,7 @@ public final class TaskList implements Runnable {
     public void run() {
         out.println("Welcome to TaskList! Type 'help' for available commands.");
         while (true) {
-            out.print("> ");
+            out.print(PROMPT);
             out.flush();
             String command;
             try {
@@ -79,8 +89,10 @@ public final class TaskList implements Runnable {
     }
 
     private void show() {
-        for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
-            out.println(project.getKey());
+        Map<Project, List<Task>> tasks = taskListService.getAllTasksGroupedByProject();
+
+        for (Map.Entry<Project, List<Task>> project : tasks.entrySet()) {
+            out.println(project.getKey().getName());
             for (Task task : project.getValue()) {
                 out.printf("    [%c] %d: %s%n", (task.isDone() ? 'x' : ' '), task.getId(), task.getDescription());
             }
@@ -89,30 +101,18 @@ public final class TaskList implements Runnable {
     }
 
     private void showByDueDate() {
-        Map<LocalDate, List<Task>> tasksByDate = new TreeMap<>();
-        List<Task> noDeadline = new ArrayList<>();
-
-        for (List<Task> projectTasks : tasks.values()) {
-            for (Task task : projectTasks) {
-                if (task.getDueDate() != null) {
-                    tasksByDate.computeIfAbsent(task.getDueDate(), key -> new ArrayList<>())
-                            .add(task);
-                } else {
-                    noDeadline.add(task);
-                }
-            }
-        }
+        Map<LocalDate, List<Task>> tasksByDate = taskListService.getAllTasksGroupedByDueDate();
 
         for (Map.Entry<LocalDate, List<Task>> entry : tasksByDate.entrySet()) {
-            out.println(entry.getKey().format(formatter) + ":");
-            for (Task task : entry.getValue()) {
-                out.println("       " + task.getId() + ": " + task.getDescription());
-            }
-        }
+            LocalDate date = entry.getKey();
 
-        if (!noDeadline.isEmpty()) {
-            out.println("No deadline:");
-            for (Task task : noDeadline) {
+            if (date.equals(LocalDate.MAX)) {
+                out.println("No deadline:");
+            } else {
+                out.println(date.format(formatter) + ":");
+            }
+
+            for (Task task : entry.getValue()) {
                 out.println("       " + task.getId() + ": " + task.getDescription());
             }
         }
@@ -130,33 +130,30 @@ public final class TaskList implements Runnable {
         }
     }
 
+    private void addProject(String name) {
+        taskListService.createProject(name);
+    }
+
+    private void addTask(String projectName, String taskDescription) {
+        try {
+            taskListService.addTaskToProject(projectName, taskDescription);
+        } catch(RecordNotFoundException exception) {
+            out.printf(exception.getMessage());
+            out.println();
+        }
+    }
+
     private void deadline(String commandLine) {
         String[] commandDetails = commandLine.split(" ", 2);
         int id = Integer.parseInt(commandDetails[0]);
-        Task task = findTaskById(id);
-
         LocalDate dueDate = LocalDate.parse(commandDetails[1], formatter);
 
-        if (task == null) {
-            out.printf("Could not find a task with an ID of %d.", id);
+        try {
+            taskListService.setDeadlineOnTask(id, dueDate);
+        } catch (Exception exception) {
+            out.printf(exception.getMessage());
             out.println();
-            return;
         }
-        task.setDueDate(dueDate);
-    }
-
-    private void addProject(String name) {
-        tasks.put(name, new ArrayList<>());
-    }
-
-    private void addTask(String project, String description) {
-        List<Task> projectTasks = tasks.get(project);
-        if (projectTasks == null) {
-            out.printf("Could not find a project with the name \"%s\".", project);
-            out.println();
-            return;
-        }
-        projectTasks.add(new Task(nextId(), description, false));
     }
 
     private void check(String idString) {
@@ -169,26 +166,12 @@ public final class TaskList implements Runnable {
 
     private void setDone(String idString, boolean done) {
         int id = Integer.parseInt(idString);
-        Task task = findTaskById(id);
-
-        if (task == null) {
-            out.printf("Could not find a task with an ID of %d.", id);
+        try {
+            taskListService.changeDoneOnTask(id, done);
+        } catch(RecordNotFoundException exception) {
+            out.printf(exception.getMessage());
             out.println();
-            return;
         }
-
-        task.setDone(done);
-    }
-
-    private Task findTaskById(int id) {
-        for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
-            for (Task task : project.getValue()) {
-                if (task.getId() == id) {
-                    return task;
-                }
-            }
-        }
-        return null;
     }
 
     private void help() {

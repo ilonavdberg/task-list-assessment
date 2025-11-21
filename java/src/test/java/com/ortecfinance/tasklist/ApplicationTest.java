@@ -1,5 +1,9 @@
 package com.ortecfinance.tasklist;
 
+import com.ortecfinance.tasklist.api.cli.ApplicationCliRunner;
+import com.ortecfinance.tasklist.application.TaskListService;
+import com.ortecfinance.tasklist.domain.project.ProjectRepository;
+import com.ortecfinance.tasklist.domain.task.TaskRepository;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -9,7 +13,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public final class ApplicationTest {
-    public static final String PROMPT = "> ";
     private final PipedOutputStream inStream = new PipedOutputStream();
     private final PrintWriter inWriter = new PrintWriter(inStream, true);
 
@@ -21,8 +24,8 @@ public final class ApplicationTest {
     public ApplicationTest() throws IOException {
         BufferedReader in = new BufferedReader(new InputStreamReader(new PipedInputStream(inStream)));
         PrintWriter out = new PrintWriter(new PipedOutputStream(outStream), true);
-        TaskList taskList = new TaskList(in, out);
-        applicationThread = new Thread(taskList);
+        ApplicationCliRunner applicationCliRunner = new ApplicationCliRunner(new TaskListService(TaskRepository.getInstance(), ProjectRepository.getInstance()), in, out);
+        applicationThread = new Thread(applicationCliRunner);
     }
 
     @BeforeEach
@@ -115,7 +118,7 @@ public final class ApplicationTest {
     }
 
     private void execute(String command) throws IOException {
-        read(PROMPT);
+        read(ApplicationCliRunner.PROMPT);
         write(command);
     }
 
