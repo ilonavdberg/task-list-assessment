@@ -24,12 +24,6 @@ public class ProjectController {
         this.taskListService = taskListService;
     }
 
-    @GetMapping("/{name}/tasks")
-    public ResponseEntity<Map<Project, List<Task>>> getTasksByProject() {
-        Map<Project, List<Task>> result = taskListService.getAllTasksGroupedByProject();
-        return ResponseEntity.ok(result);
-    }
-
     @PostMapping
     public ResponseEntity<Void> create(@RequestBody CreateProjectRequest request) {
         taskListService.createProject(request.name());
@@ -37,8 +31,11 @@ public class ProjectController {
     }
 
     @PostMapping("{name}/tasks")
-    public ResponseEntity<Void> create(@RequestBody CreateTaskRequest request) {
-        Task task = taskListService.addTaskToProject(request.projectName(), request.taskDescription());
+    public ResponseEntity<Void> create(
+            @PathVariable("name") String projectName,
+            @RequestBody CreateTaskRequest request
+    ) {
+        Task task = taskListService.addTaskToProject(projectName, request.taskDescription());
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentContextPath()

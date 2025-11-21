@@ -3,6 +3,7 @@ package com.ortecfinance.tasklist.api.rest.task;
 import com.ortecfinance.tasklist.api.rest.task.dto.UpdateTaskDeadlineRequest;
 import com.ortecfinance.tasklist.api.rest.task.dto.UpdateTaskStatusRequest;
 import com.ortecfinance.tasklist.application.TaskListService;
+import com.ortecfinance.tasklist.domain.project.Project;
 import com.ortecfinance.tasklist.domain.task.Task;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,12 @@ public class TaskController {
 
     public TaskController(TaskListService taskListService) {
         this.taskListService = taskListService;
+    }
+
+    @GetMapping("/by-project")
+    public ResponseEntity<Map<Project, List<Task>>> getTasksByProject() {
+        Map<Project, List<Task>> result = taskListService.getAllTasksGroupedByProject();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/by-deadline")
