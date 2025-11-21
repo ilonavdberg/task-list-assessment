@@ -6,10 +6,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class TaskList implements Runnable {
     private static final String QUIT = "quit";
@@ -17,6 +14,7 @@ public final class TaskList implements Runnable {
     private final Map<String, List<Task>> tasks = new LinkedHashMap<>();
     private final BufferedReader in;
     private final PrintWriter out;
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
     private long lastId = 0;
 
@@ -56,6 +54,9 @@ public final class TaskList implements Runnable {
             case "show":
                 show();
                 break;
+            case "show-by-deadline":
+                showByDueDate();
+                break;
             case "add":
                 add(commandRest[1]);
                 break;
@@ -87,6 +88,37 @@ public final class TaskList implements Runnable {
         }
     }
 
+    private void showByDueDate() {
+        Map<LocalDate, List<Task>> tasksByDate = new TreeMap<>();
+        List<Task> noDeadline = new ArrayList<>();
+
+        for (List<Task> projectTasks : tasks.values()) {
+            for (Task task : projectTasks) {
+                if (task.getDueDate() != null) {
+                    tasksByDate.computeIfAbsent(task.getDueDate(), key -> new ArrayList<>())
+                            .add(task);
+                } else {
+                    noDeadline.add(task);
+                }
+            }
+        }
+
+        for (Map.Entry<LocalDate, List<Task>> entry : tasksByDate.entrySet()) {
+            out.println(entry.getKey().format(formatter) + ":");
+            for (Task task : entry.getValue()) {
+                out.println("       " + task.getId() + ": " + task.getDescription());
+            }
+        }
+
+        if (!noDeadline.isEmpty()) {
+            out.println("No deadline:");
+            for (Task task : noDeadline) {
+                out.println("       " + task.getId() + ": " + task.getDescription());
+            }
+        }
+
+    }
+
     private void add(String commandLine) {
         String[] subcommandRest = commandLine.split(" ", 2);
         String subcommand = subcommandRest[0];
@@ -103,7 +135,6 @@ public final class TaskList implements Runnable {
         int id = Integer.parseInt(commandDetails[0]);
         Task task = findTaskById(id);
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
         LocalDate dueDate = LocalDate.parse(commandDetails[1], formatter);
 
         if (task == null) {
@@ -163,11 +194,12 @@ public final class TaskList implements Runnable {
     private void help() {
         out.println("Commands:");
         out.println("  show");
+        out.println("  show-by-deadline");
         out.println("  add project <project name>");
         out.println("  add task <project name> <task description>");
+        out.println("  deadline <ID> <date (format: DD-MM-YYYY)>");
         out.println("  check <task ID>");
         out.println("  uncheck <task ID>");
-        out.println("  deadline <ID> <date (format: DD-MM-YYYY)>");
         out.println();
     }
 
