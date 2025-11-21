@@ -46,7 +46,7 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
-    @PutMapping("/{id}/status")
+    @PutMapping("/{id}/deadline")
     public ResponseEntity<Void> updateDeadline(
             @PathVariable int id,
             @RequestBody UpdateTaskDeadlineRequest request

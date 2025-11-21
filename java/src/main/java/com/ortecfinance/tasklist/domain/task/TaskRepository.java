@@ -1,6 +1,7 @@
 package com.ortecfinance.tasklist.domain.task;
 
 import com.ortecfinance.tasklist.domain.project.Project;
+import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Repository
 public class TaskRepository {
     private final List<Task> tasks = new ArrayList<>();
 

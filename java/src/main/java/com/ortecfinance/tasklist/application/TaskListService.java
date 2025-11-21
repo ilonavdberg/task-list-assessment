@@ -5,11 +5,13 @@ import com.ortecfinance.tasklist.domain.project.ProjectRepository;
 import com.ortecfinance.tasklist.domain.task.Task;
 import com.ortecfinance.tasklist.domain.task.TaskRepository;
 import com.ortecfinance.tasklist.exceptions.RecordNotFoundException;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Service
 public class TaskListService {
 
     private final TaskRepository taskRepository;

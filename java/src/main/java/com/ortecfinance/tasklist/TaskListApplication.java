@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class TaskListApplication {
 
     public static void main(String[] args) {
-        if (args.length == 0) {
+        if (args.length > 0) {
             System.out.println("Starting console Application");
             ApplicationCliRunner.startConsole();
         }

@@ -1,10 +1,13 @@
 package com.ortecfinance.tasklist.domain.project;
 
+import org.springframework.stereotype.Repository;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+@Repository
 public class ProjectRepository {
     private final List<Project> projects = new ArrayList<>();
 
